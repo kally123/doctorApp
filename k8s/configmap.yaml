@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: healthcare-config
+  namespace: healthcare
+  labels:
+    app.kubernetes.io/name: healthcare-platform
+    app.kubernetes.io/component: configuration
+data:
+  # Application Settings
+  SPRING_PROFILES_ACTIVE: "kubernetes"
+  
+  # Database Settings
+  POSTGRES_HOST: "postgres-service.healthcare.svc.cluster.local"
+  POSTGRES_PORT: "5432"
+  
+  # Redis Settings
+  REDIS_HOST: "redis-service.healthcare.svc.cluster.local"
+  REDIS_PORT: "6379"
+  
+  # Kafka Settings
+  KAFKA_BOOTSTRAP_SERVERS: "kafka-service.healthcare.svc.cluster.local:9092"
+  
+  # Elasticsearch Settings
+  ELASTICSEARCH_HOST: "elasticsearch-service.healthcare.svc.cluster.local"
+  ELASTICSEARCH_PORT: "9200"
+  
+  # Service Discovery
+  USER_SERVICE_URL: "http://user-service.healthcare.svc.cluster.local:8080"
+  DOCTOR_SERVICE_URL: "http://doctor-service.healthcare.svc.cluster.local:8080"
+  SEARCH_SERVICE_URL: "http://search-service.healthcare.svc.cluster.local:8080"
+  API_GATEWAY_URL: "http://api-gateway.healthcare.svc.cluster.local:8080"
+  
+  # Logging
+  LOG_LEVEL: "INFO"
+  
+  # CORS
+  ALLOWED_ORIGINS: "https://healthcare.example.com,https://doctor.healthcare.example.com"

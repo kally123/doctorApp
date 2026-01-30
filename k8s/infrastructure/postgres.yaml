@@ -1,0 +1,126 @@
+# PostgreSQL StatefulSet for Healthcare Platform
+# In production, consider using managed services like AWS RDS or Cloud SQL
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: healthcare
+  labels:
+    app: postgres
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/component: database
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15-alpine
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: healthcare-secrets
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: healthcare-secrets
+                  key: POSTGRES_PASSWORD
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "2"
+              memory: "4Gi"
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+            - name: init-scripts
+              mountPath: /docker-entrypoint-initdb.d
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - healthcare_user
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - healthcare_user
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+      volumes:
+        - name: init-scripts
+          configMap:
+            name: postgres-init-scripts
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: standard
+        resources:
+          requests:
+            storage: 50Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: healthcare
+  labels:
+    app: postgres
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5432
+      targetPort: 5432
+      protocol: TCP
+      name: postgres
+  selector:
+    app: postgres
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init-scripts
+  namespace: healthcare
+data:
+  init-databases.sql: |
+    -- Create databases for each service
+    CREATE DATABASE user_db;
+    CREATE DATABASE doctor_db;
+    CREATE DATABASE appointment_db;
+    CREATE DATABASE payment_db;
+    
+    -- Create service users
+    CREATE USER user_service WITH ENCRYPTED PASSWORD 'CHANGE_ME_IN_PRODUCTION';
+    CREATE USER doctor_service WITH ENCRYPTED PASSWORD 'CHANGE_ME_IN_PRODUCTION';
+    CREATE USER appointment_service WITH ENCRYPTED PASSWORD 'CHANGE_ME_IN_PRODUCTION';
+    CREATE USER payment_service WITH ENCRYPTED PASSWORD 'CHANGE_ME_IN_PRODUCTION';
+    
+    -- Grant privileges
+    GRANT ALL PRIVILEGES ON DATABASE user_db TO user_service;
+    GRANT ALL PRIVILEGES ON DATABASE doctor_db TO doctor_service;
+    GRANT ALL PRIVILEGES ON DATABASE appointment_db TO appointment_service;
+    GRANT ALL PRIVILEGES ON DATABASE payment_db TO payment_service;
