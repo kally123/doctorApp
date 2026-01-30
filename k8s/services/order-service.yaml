@@ -1,0 +1,201 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  namespace: healthcare
+  labels:
+    app: order-service
+    app.kubernetes.io/name: order-service
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: healthcare-platform
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: order-service
+  template:
+    metadata:
+      labels:
+        app: order-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8089"
+        prometheus.io/path: "/actuator/prometheus"
+    spec:
+      serviceAccountName: healthcare-service-account
+      containers:
+        - name: order-service
+          image: healthcare/order-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8089
+              protocol: TCP
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              valueFrom:
+                configMapKeyRef:
+                  name: healthcare-config
+                  key: SPRING_PROFILES_ACTIVE
+            - name: POSTGRES_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: healthcare-config
+                  key: POSTGRES_HOST
+            - name: POSTGRES_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: healthcare-config
+                  key: POSTGRES_PORT
+            - name: SPRING_R2DBC_URL
+              value: "r2dbc:postgresql://$(POSTGRES_HOST):$(POSTGRES_PORT)/order_db"
+            - name: SPRING_R2DBC_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: order-db-credentials
+                  key: POSTGRES_USER
+            - name: SPRING_R2DBC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: order-db-credentials
+                  key: POSTGRES_PASSWORD
+            - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: healthcare-config
+                  key: KAFKA_BOOTSTRAP_SERVERS
+            - name: REDIS_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: healthcare-config
+                  key: REDIS_HOST
+            - name: REDIS_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: healthcare-config
+                  key: REDIS_PORT
+            - name: ELASTICSEARCH_URIS
+              valueFrom:
+                configMapKeyRef:
+                  name: healthcare-config
+                  key: ELASTICSEARCH_URIS
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: aws-credentials
+                  key: ACCESS_KEY_ID
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aws-credentials
+                  key: SECRET_ACCESS_KEY
+            - name: AWS_S3_BUCKET
+              valueFrom:
+                configMapKeyRef:
+                  name: healthcare-config
+                  key: AWS_S3_LAB_REPORTS_BUCKET
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8089
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8089
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          volumeMounts:
+            - name: tmp-volume
+              mountPath: /tmp
+      volumes:
+        - name: tmp-volume
+          emptyDir: {}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - order-service
+                topologyKey: kubernetes.io/hostname
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+  namespace: healthcare
+  labels:
+    app: order-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8089
+      targetPort: 8089
+      protocol: TCP
+      name: http
+  selector:
+    app: order-service
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: order-service-hpa
+  namespace: healthcare
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: order-service
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: order-service-pdb
+  namespace: healthcare
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: order-service
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: order-db-credentials
+  namespace: healthcare
+type: Opaque
+stringData:
+  POSTGRES_USER: order_user
+  POSTGRES_PASSWORD: order_password_change_in_production

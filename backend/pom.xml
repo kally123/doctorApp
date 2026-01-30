@@ -31,6 +31,7 @@
         <module>consultation-service</module>
         <module>prescription-service</module>
         <module>ehr-service</module>
+        <module>order-service</module>
     </modules>
 
     <properties>
