@@ -3,6 +3,7 @@ package com.healthapp.gateway.config;
 import org.springframework.cloud.gateway.filter.ratelimit.KeyResolver;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import reactor.core.publisher.Mono;
 
 /**
@@ -16,6 +17,7 @@ public class RateLimiterConfig {
      * Used for public endpoints.
      */
     @Bean
+    @Primary
     public KeyResolver ipKeyResolver() {
         return exchange -> {
             String clientIp = exchange.getRequest().getRemoteAddress() != null

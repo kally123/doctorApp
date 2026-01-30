@@ -49,7 +49,7 @@ public class DocumentUploadService {
     @Value("${aws.presigned-url-expiry:3600}")
     private int presignedUrlExpiry;
 
-    @Value("${document.allowed-types}")
+    @Value("${document.allowed-types:application/pdf,image/jpeg,image/png,image/gif,application/msword}")
     private List<String> allowedTypes;
 
     @Value("${document.max-size-mb:50}")

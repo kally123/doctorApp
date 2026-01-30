@@ -21,7 +21,7 @@ public interface HealthRecordRepository extends ReactiveMongoRepository<HealthRe
 
     Flux<HealthRecord> findByPatientIdAndRecordTypeOrderByRecordDateDesc(UUID patientId, RecordType recordType);
 
-    Flux<HealthRecord> findByPatientIdAndRecordTypesInOrderByRecordDateDesc(UUID patientId, List<RecordType> recordTypes);
+    Flux<HealthRecord> findByPatientIdAndRecordTypeInOrderByRecordDateDesc(UUID patientId, List<RecordType> recordTypes);
 
     Flux<HealthRecord> findByPatientIdAndRecordDateBetweenOrderByRecordDateDesc(
             UUID patientId, LocalDateTime startDate, LocalDateTime endDate);

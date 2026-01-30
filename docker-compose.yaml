@@ -168,6 +168,7 @@ services:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: docker
+      SPRING_MAIN_ALLOW_BEAN_DEFINITION_OVERRIDING: "true"
       SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/doctor_db
       SPRING_R2DBC_USERNAME: healthcare_admin
       SPRING_R2DBC_PASSWORD: healthcare_password
