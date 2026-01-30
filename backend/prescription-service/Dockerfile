@@ -6,7 +6,7 @@ WORKDIR /app
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 # Copy the jar file
-COPY target/*.jar app.jar
+COPY prescription-service/target/*.jar app.jar
 
 # Set ownership
 RUN chown -R appuser:appgroup /app

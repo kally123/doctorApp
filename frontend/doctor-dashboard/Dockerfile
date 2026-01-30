@@ -2,8 +2,14 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Configure npm for better network handling
+RUN npm config set registry https://registry.npmjs.org/ && \
+    npm config set fetch-retries 5 && \
+    npm config set fetch-retry-mintimeout 20000 && \
+    npm config set fetch-retry-maxtimeout 120000
+
 COPY package*.json ./
-RUN npm install
+RUN npm install --prefer-offline --no-audit --progress=false
 
 COPY . .
 RUN npm run build

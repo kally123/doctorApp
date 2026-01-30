@@ -5,6 +5,9 @@ spring:
   application:
     name: ehr-service
   
+  main:
+    allow-bean-definition-overriding: true
+  
   data:
     mongodb:
       uri: mongodb://localhost:27017/ehr_db
@@ -31,6 +34,12 @@ spring:
     multipart:
       max-file-size: 50MB
       max-request-size: 50MB
+
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:your-256-bit-secret-key-for-jwt-signing-must-be-at-least-32-chars}
+  access-token-expiry: ${JWT_ACCESS_EXPIRY:900}
+  refresh-token-expiry: ${JWT_REFRESH_EXPIRY:604800}
 
 # AWS S3 Configuration
 aws:

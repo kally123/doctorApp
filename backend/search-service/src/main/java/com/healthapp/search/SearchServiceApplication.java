@@ -2,6 +2,9 @@ package com.healthapp.search;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration;
+import org.springframework.boot.autoconfigure.r2dbc.R2dbcDataAutoConfiguration;
+import org.springframework.boot.autoconfigure.data.r2dbc.R2dbcDataAutoConfiguration;
 import org.springframework.cache.annotation.EnableCaching;
 
 /**
@@ -9,7 +12,10 @@ import org.springframework.cache.annotation.EnableCaching;
  * 
  * Provides doctor search and discovery functionality using Elasticsearch.
  */
-@SpringBootApplication
+@SpringBootApplication(exclude = {
+    R2dbcAutoConfiguration.class,
+    R2dbcDataAutoConfiguration.class
+})
 @EnableCaching
 public class SearchServiceApplication {
     

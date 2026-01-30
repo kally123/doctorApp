@@ -7,7 +7,7 @@ RUN addgroup -g 1001 -S appgroup && \
     adduser -u 1001 -S appuser -G appgroup
 
 # Copy the jar file
-COPY target/*.jar app.jar
+COPY consultation-service/target/*.jar app.jar
 
 # Set ownership
 RUN chown -R appuser:appgroup /app

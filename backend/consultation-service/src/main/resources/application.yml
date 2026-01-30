@@ -5,6 +5,9 @@ spring:
   application:
     name: consultation-service
   
+  main:
+    allow-bean-definition-overriding: true
+  
   r2dbc:
     url: r2dbc:postgresql://localhost:5432/consultation_db
     username: healthcare_admin
@@ -45,6 +48,12 @@ spring:
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: "*"
+
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:your-256-bit-secret-key-for-jwt-signing-must-be-at-least-32-chars}
+  access-token-expiry: ${JWT_ACCESS_EXPIRY:900}
+  refresh-token-expiry: ${JWT_REFRESH_EXPIRY:604800}
 
 # Twilio Configuration
 twilio:
