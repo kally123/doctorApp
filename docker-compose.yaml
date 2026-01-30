@@ -8,7 +8,7 @@ services:
     environment:
       POSTGRES_USER: healthcare_admin
       POSTGRES_PASSWORD: healthcare_password
-      POSTGRES_MULTIPLE_DATABASES: user_db,doctor_db,appointment_db,payment_db,notification_db,consultation_db
+      POSTGRES_MULTIPLE_DATABASES: user_db,doctor_db,appointment_db,payment_db,notification_db,consultation_db,prescription_db
     ports:
       - "5432:5432"
     volumes:
@@ -326,6 +326,88 @@ services:
     networks:
       - healthcare-network
 
+  prescription-service:
+    build:
+      context: ./backend
+      dockerfile: prescription-service/Dockerfile
+    container_name: healthcare-prescription-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/prescription_db
+      SPRING_R2DBC_USERNAME: healthcare_admin
+      SPRING_R2DBC_PASSWORD: healthcare_password
+      SPRING_FLYWAY_URL: jdbc:postgresql://postgres:5432/prescription_db
+      SPRING_FLYWAY_USER: healthcare_admin
+      SPRING_FLYWAY_PASSWORD: healthcare_password
+      SPRING_ELASTICSEARCH_URIS: http://elasticsearch:9200
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_DATA_REDIS_PASSWORD: redis_password
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      AWS_S3_ENDPOINT: http://localstack:4566
+      AWS_S3_BUCKET: healthapp-prescriptions
+      AWS_S3_REGION: us-east-1
+      AWS_S3_ACCESS_KEY: test
+      AWS_S3_SECRET_KEY: test
+      SIGNING_TEST_MODE: "true"
+    ports:
+      - "8088:8088"
+    networks:
+      - healthcare-network
+
+  ehr-service:
+    build:
+      context: ./backend
+      dockerfile: ehr-service/Dockerfile
+    container_name: healthcare-ehr-service
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATA_MONGODB_URI: mongodb://admin:mongo_password@mongodb:27017/ehr_db?authSource=admin
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_DATA_REDIS_PASSWORD: redis_password
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      AWS_S3_ENDPOINT: http://localstack:4566
+      AWS_S3_BUCKET: healthapp-ehr-documents
+      AWS_S3_REGION: us-east-1
+      AWS_S3_ACCESS_KEY: test
+      AWS_S3_SECRET_KEY: test
+    ports:
+      - "8089:8089"
+    networks:
+      - healthcare-network
+
+  localstack:
+    image: localstack/localstack:3.0
+    container_name: healthcare-localstack
+    environment:
+      SERVICES: s3
+      DEBUG: 1
+      AWS_DEFAULT_REGION: us-east-1
+    ports:
+      - "4566:4566"
+    volumes:
+      - localstack_data:/var/lib/localstack
+      - ./scripts/init-localstack.sh:/etc/localstack/init/ready.d/init-localstack.sh
+    networks:
+      - healthcare-network
+
   api-gateway:
     build:
       context: ./backend
@@ -339,6 +421,8 @@ services:
       - payment-service
       - notification-service
       - consultation-service
+      - prescription-service
+      - ehr-service
     environment:
       SPRING_PROFILES_ACTIVE: docker
       SPRING_DATA_REDIS_HOST: redis
@@ -351,6 +435,8 @@ services:
       PAYMENT_SERVICE_URL: http://payment-service:8085
       CONSULTATION_SERVICE_URL: http://consultation-service:8087
       NOTIFICATION_SERVICE_URL: http://notification-service:8086
+      PRESCRIPTION_SERVICE_URL: http://prescription-service:8088
+      EHR_SERVICE_URL: http://ehr-service:8089
       JWT_SECRET: your-256-bit-secret-key-for-jwt-signing-here
       ALLOWED_ORIGINS: http://localhost:3000,http://localhost:5173
     ports:
@@ -395,6 +481,7 @@ volumes:
   kafka_data:
   elasticsearch_data:
   mongodb_data:
+  localstack_data:
 
 networks:
   healthcare-network:

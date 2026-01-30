@@ -1,0 +1,97 @@
+spring:
+  application:
+    name: prescription-service
+
+  # R2DBC PostgreSQL
+  r2dbc:
+    url: r2dbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:prescription_db}
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:postgres}
+    pool:
+      initial-size: 5
+      max-size: 20
+      max-idle-time: 30m
+
+  # Flyway (uses JDBC for migrations)
+  flyway:
+    enabled: true
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:prescription_db}
+    user: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:postgres}
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+  # Elasticsearch for medicine search
+  elasticsearch:
+    uris: ${ELASTICSEARCH_URI:http://localhost:9200}
+    username: ${ELASTICSEARCH_USER:}
+    password: ${ELASTICSEARCH_PASSWORD:}
+    connection-timeout: 5s
+    socket-timeout: 30s
+
+  # Redis
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+  # Kafka
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: prescription-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: com.healthapp.*
+
+# Server
+server:
+  port: ${SERVER_PORT:8088}
+
+# AWS S3 for PDF storage
+aws:
+  s3:
+    bucket: ${S3_BUCKET:healthapp-prescriptions}
+    region: ${AWS_REGION:ap-south-1}
+    access-key: ${AWS_ACCESS_KEY:}
+    secret-key: ${AWS_SECRET_KEY:}
+    endpoint: ${S3_ENDPOINT:}  # For local development with LocalStack
+    presigned-url-expiration: 24h
+
+# Digital Signature
+signing:
+  enabled: ${SIGNING_ENABLED:true}
+  key-store-path: ${SIGNING_KEYSTORE_PATH:classpath:keystore/signing.p12}
+  key-store-password: ${SIGNING_KEYSTORE_PASSWORD:changeit}
+  key-alias: ${SIGNING_KEY_ALIAS:prescription-signing}
+  # For test mode (no actual signing)
+  test-mode: ${SIGNING_TEST_MODE:true}
+
+# Kafka Topics
+kafka:
+  topics:
+    prescription-events: prescription-events
+    consultation-events: consultation-events
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+
+# Logging
+logging:
+  level:
+    com.healthapp: DEBUG
+    org.springframework.r2dbc: DEBUG
+    org.springframework.data.elasticsearch: DEBUG

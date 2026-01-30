@@ -1,0 +1,86 @@
+server:
+  port: 8089
+
+spring:
+  application:
+    name: ehr-service
+  
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/ehr_db
+      auto-index-creation: true
+    
+    redis:
+      host: localhost
+      port: 6379
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: ehr-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+# AWS S3 Configuration
+aws:
+  s3:
+    bucket: healthapp-ehr-documents
+    region: us-east-1
+    endpoint: http://localhost:4566  # LocalStack for development
+    access-key: test
+    secret-key: test
+  presigned-url-expiry: 3600  # 1 hour
+
+# Document settings
+document:
+  allowed-types:
+    - application/pdf
+    - image/jpeg
+    - image/png
+    - image/gif
+    - application/dicom
+    - application/msword
+    - application/vnd.openxmlformats-officedocument.wordprocessingml.document
+  max-size-mb: 50
+  virus-scan-enabled: false  # Enable in production
+
+# Vitals configuration
+vitals:
+  retention-days: 3650  # 10 years
+  aggregation:
+    enabled: true
+    intervals: 
+      - HOURLY
+      - DAILY
+      - WEEKLY
+      - MONTHLY
+
+# Management endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+# Logging
+logging:
+  level:
+    com.healthapp.ehr: DEBUG
+    org.springframework.data.mongodb: DEBUG

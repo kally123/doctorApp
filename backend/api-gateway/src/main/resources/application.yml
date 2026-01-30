@@ -248,6 +248,139 @@ spring:
                 redis-rate-limiter.burstCapacity: 200
                 key-resolver: "#{@userKeyResolver}"
 
+        # ==================== PRESCRIPTION SERVICE ====================
+        # Public medicine search
+        - id: medicine-search
+          uri: ${PRESCRIPTION_SERVICE_URL:http://localhost:8088}
+          predicates:
+            - Path=/api/v1/medicines/search, /api/v1/medicines/alternatives
+            - Method=GET
+          filters:
+            - JwtAuthFilter
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 100
+                redis-rate-limiter.burstCapacity: 200
+                key-resolver: "#{@ipKeyResolver}"
+
+        # Protected prescription endpoints
+        - id: prescriptions-protected
+          uri: ${PRESCRIPTION_SERVICE_URL:http://localhost:8088}
+          predicates:
+            - Path=/api/v1/prescriptions/**
+          filters:
+            - JwtAuthFilter
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 100
+                redis-rate-limiter.burstCapacity: 200
+                key-resolver: "#{@userKeyResolver}"
+
+        # Protected medicine endpoints
+        - id: medicines-protected
+          uri: ${PRESCRIPTION_SERVICE_URL:http://localhost:8088}
+          predicates:
+            - Path=/api/v1/medicines/**
+          filters:
+            - JwtAuthFilter
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 100
+                redis-rate-limiter.burstCapacity: 200
+                key-resolver: "#{@userKeyResolver}"
+
+        # Protected template endpoints
+        - id: templates-protected
+          uri: ${PRESCRIPTION_SERVICE_URL:http://localhost:8088}
+          predicates:
+            - Path=/api/v1/templates/**
+          filters:
+            - JwtAuthFilter
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 100
+                redis-rate-limiter.burstCapacity: 200
+                key-resolver: "#{@userKeyResolver}"
+
+        # ==================== EHR SERVICE ====================
+        # Protected health records endpoints
+        - id: records-protected
+          uri: ${EHR_SERVICE_URL:http://localhost:8089}
+          predicates:
+            - Path=/api/v1/records/**
+          filters:
+            - JwtAuthFilter
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 100
+                redis-rate-limiter.burstCapacity: 200
+                key-resolver: "#{@userKeyResolver}"
+
+        # Protected documents endpoints
+        - id: documents-protected
+          uri: ${EHR_SERVICE_URL:http://localhost:8089}
+          predicates:
+            - Path=/api/v1/documents/**
+          filters:
+            - JwtAuthFilter
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 50
+                redis-rate-limiter.burstCapacity: 100
+                key-resolver: "#{@userKeyResolver}"
+
+        # Protected vitals endpoints
+        - id: vitals-protected
+          uri: ${EHR_SERVICE_URL:http://localhost:8089}
+          predicates:
+            - Path=/api/v1/vitals/**
+          filters:
+            - JwtAuthFilter
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 100
+                redis-rate-limiter.burstCapacity: 200
+                key-resolver: "#{@userKeyResolver}"
+
+        # Protected medical history endpoints
+        - id: medical-history-protected
+          uri: ${EHR_SERVICE_URL:http://localhost:8089}
+          predicates:
+            - Path=/api/v1/medical-history/**
+          filters:
+            - JwtAuthFilter
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 100
+                redis-rate-limiter.burstCapacity: 200
+                key-resolver: "#{@userKeyResolver}"
+
+        # Protected sharing endpoints
+        - id: shares-protected
+          uri: ${EHR_SERVICE_URL:http://localhost:8089}
+          predicates:
+            - Path=/api/v1/shares/**
+          filters:
+            - JwtAuthFilter
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 100
+                redis-rate-limiter.burstCapacity: 200
+                key-resolver: "#{@userKeyResolver}"
+
+        # Protected summary endpoints
+        - id: summary-protected
+          uri: ${EHR_SERVICE_URL:http://localhost:8089}
+          predicates:
+            - Path=/api/v1/summary/**
+          filters:
+            - JwtAuthFilter
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 100
+                redis-rate-limiter.burstCapacity: 200
+                key-resolver: "#{@userKeyResolver}"
+
 # JWT Configuration
 jwt:
   secret: ${JWT_SECRET:your-256-bit-secret-key-for-jwt-signing-must-be-at-least-32-chars}

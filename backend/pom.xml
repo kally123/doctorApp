@@ -29,6 +29,8 @@
         <module>payment-service</module>
         <module>notification-service</module>
         <module>consultation-service</module>
+        <module>prescription-service</module>
+        <module>ehr-service</module>
     </modules>
 
     <properties>
